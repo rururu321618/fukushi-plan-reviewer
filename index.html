@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>障害福祉計画レビュワー</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -22,10 +20,9 @@
             --border: #dfe6e9;
             --shadow: 0 2px 12px rgba(0,0,0,0.08);
             --radius: 12px;
+            --highlight-bg: rgba(112,178,31,0.25);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: 'Noto Sans JP', sans-serif;
             background: var(--bg);
@@ -37,108 +34,55 @@
         .header {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 24px 32px;
+            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
-        .header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .header-actions {
-            display: flex;
-            gap: 12px;
-        }
+        .header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .header-actions { display: flex; gap: 8px; }
         .header-btn {
             background: rgba(255,255,255,0.2);
             color: white;
             border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-family: inherit;
             transition: all 0.2s;
         }
         .header-btn:hover { background: rgba(255,255,255,0.3); }
 
-        /* Main Layout */
-        .container {
-            max-width: 1200px;
+        /* Setup Section (API key + Upload) */
+        .setup-section {
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 24px;
+            padding: 16px 24px;
         }
-
-        /* Upload Section */
-        .upload-section {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 40px;
-            text-align: center;
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
-            border: 2px dashed var(--border);
-            transition: border-color 0.3s;
+        .setup-row {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+            flex-wrap: wrap;
         }
-        .upload-section.dragover {
-            border-color: var(--primary);
-            background: var(--primary-light);
-        }
-        .upload-icon { font-size: 48px; margin-bottom: 16px; }
-        .upload-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-        .upload-desc { color: var(--text-light); margin-bottom: 20px; }
-
-        .file-input-wrapper {
-            display: inline-block;
-            position: relative;
-        }
-        .file-input { display: none; }
-        .upload-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-        .upload-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
-
-        .file-name {
-            margin-top: 12px;
-            font-size: 14px;
-            color: var(--primary-dark);
-            font-weight: 500;
-        }
-
-        /* API Key Section */
-        .api-key-section {
+        .setup-card {
             background: var(--card-bg);
             border-radius: var(--radius);
             padding: 20px 24px;
             box-shadow: var(--shadow);
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
+            flex: 1;
+            min-width: 280px;
         }
-        .api-key-section label {
-            font-weight: 700;
-            font-size: 14px;
-            white-space: nowrap;
-        }
+        .setup-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--primary-dark); }
+
+        .api-key-row { display: flex; gap: 8px; }
         .api-key-input {
             flex: 1;
-            min-width: 200px;
             padding: 10px 14px;
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -150,26 +94,40 @@
             background: var(--primary-light);
             color: var(--primary-dark);
             border: 1px solid var(--primary);
-            padding: 10px 20px;
+            padding: 10px 16px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             font-family: inherit;
+            white-space: nowrap;
         }
 
-        /* Analyze Button */
-        .analyze-section {
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 20px;
             text-align: center;
-            margin-bottom: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
+        .upload-area.dragover { border-color: var(--primary); background: var(--primary-light); }
+        .upload-area.has-file { border-color: var(--primary); border-style: solid; }
+        .upload-icon { font-size: 32px; }
+        .upload-label { font-size: 14px; color: var(--text-light); margin-top: 4px; }
+        .file-name { font-size: 14px; color: var(--primary-dark); font-weight: 500; margin-top: 8px; }
+        .file-input { display: none; }
+
+        /* Analyze Button */
+        .analyze-row { text-align: center; padding: 8px 24px 16px; }
         .analyze-btn {
             background: linear-gradient(135deg, var(--accent), #e55a2b);
             color: white;
             border: none;
-            padding: 16px 48px;
+            padding: 14px 48px;
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
             font-family: inherit;
@@ -177,259 +135,281 @@
             box-shadow: 0 4px 12px rgba(255,107,53,0.3);
         }
         .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255,107,53,0.4); }
-        .analyze-btn:disabled {
-            background: #ccc;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .analyze-btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; transform: none; }
 
         /* Progress */
         .progress-section {
             display: none;
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 32px;
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px;
             text-align: center;
         }
         .progress-bar-bg {
             width: 100%;
-            height: 8px;
+            height: 6px;
             background: var(--border);
-            border-radius: 4px;
-            margin: 16px 0;
+            border-radius: 3px;
+            margin: 12px 0;
             overflow: hidden;
         }
-        .progress-bar {
-            height: 100%;
-            background: var(--primary);
-            border-radius: 4px;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-        .progress-text {
-            color: var(--text-light);
-            font-size: 14px;
-        }
+        .progress-bar { height: 100%; background: var(--primary); border-radius: 3px; width: 0%; transition: width 0.5s ease; }
+        .progress-text { color: var(--text-light); font-size: 13px; }
         .spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid var(--border); border-top-color: var(--primary);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            margin-right: 8px; vertical-align: middle;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Results */
-        .results-section {
+        /* ===== SPLIT VIEW (Main Feature) ===== */
+        .split-view {
             display: none;
+            height: calc(100vh - 60px);
+            max-width: 100%;
         }
-        .result-card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 32px;
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
+        .split-container {
+            display: flex;
+            height: 100%;
         }
-        .result-card h2 {
-            font-size: 22px;
-            font-weight: 900;
-            color: var(--primary-dark);
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 3px solid var(--primary);
+
+        /* Left: Analysis Results */
+        .analysis-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: var(--bg);
+            min-width: 0;
+        }
+
+        /* Resizer */
+        .panel-resizer {
+            width: 6px;
+            background: var(--border);
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .panel-resizer:hover, .panel-resizer.dragging { background: var(--primary); }
+
+        /* Right: PDF Viewer */
+        .pdf-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #525659;
+            min-width: 0;
+            position: relative;
+        }
+        .pdf-page-container {
+            margin-bottom: 12px;
+            position: relative;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .pdf-page-container canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .pdf-page-label {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 5;
+        }
+        /* Highlight overlay on PDF pages */
+        .pdf-highlight-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+        .pdf-text-highlight {
+            position: absolute;
+            background: var(--highlight-bg);
+            border: 2px solid var(--primary);
+            border-radius: 3px;
+            pointer-events: none;
+            animation: pulse-highlight 1.5s ease-in-out 3;
+        }
+        @keyframes pulse-highlight {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* PDF controls */
+        .pdf-controls {
+            position: sticky;
+            top: 0;
+            background: #3c3f41;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
+            z-index: 10;
         }
-        .result-card h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin: 20px 0 12px;
-            color: var(--text);
+        .pdf-controls label { color: #ccc; font-size: 13px; }
+        .pdf-controls select, .pdf-controls input {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background: #2d2f31;
+            color: white;
+            font-size: 13px;
+            font-family: inherit;
         }
-        .result-card p { margin-bottom: 12px; }
-
-        /* Styled Tables */
-        .result-card table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-            font-size: 14px;
-        }
-        .result-card th {
+        .pdf-controls button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
             background: var(--primary);
             color: white;
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
         }
-        .result-card td {
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
+
+        /* ===== Result Card Styles ===== */
+        .result-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
         }
+        .result-card h2 {
+            font-size: 20px; font-weight: 900; color: var(--primary-dark);
+            margin-bottom: 16px; padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .result-card h3 { font-size: 16px; font-weight: 700; margin: 16px 0 10px; }
+        .result-card p { margin-bottom: 10px; }
+        .result-card table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+        .result-card th { background: var(--primary); color: white; padding: 10px 14px; text-align: left; font-weight: 700; }
+        .result-card td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
         .result-card tr:nth-child(even) { background: var(--primary-light); }
         .result-card tr:hover { background: #d4edaa; }
 
-        /* Highlight boxes */
         .highlight-box {
-            background: var(--primary-light);
-            border-left: 4px solid var(--primary);
-            padding: 16px 20px;
-            border-radius: 0 8px 8px 0;
-            margin: 16px 0;
-            font-size: 16px;
+            background: var(--primary-light); border-left: 4px solid var(--primary);
+            padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 15px;
         }
-        .highlight-box.warning {
-            background: #fff3e0;
-            border-left-color: var(--accent);
-        }
-        .highlight-box.conclusion {
-            background: #e3f2fd;
-            border-left-color: #1976d2;
-            font-size: 18px;
-            font-weight: 700;
-        }
+        .highlight-box.warning { background: #fff3e0; border-left-color: var(--accent); }
+        .highlight-box.conclusion { background: #e3f2fd; border-left-color: #1976d2; font-size: 17px; font-weight: 700; }
 
-        /* Quote (引用) */
+        /* Source quote - CLICKABLE */
         .source-quote {
-            background: #f5f5f5;
-            border-left: 4px solid #9e9e9e;
-            padding: 12px 16px;
-            margin: 12px 0;
-            font-size: 13px;
-            color: #555;
+            background: #f5f5f5; border-left: 4px solid #9e9e9e;
+            padding: 12px 16px; margin: 12px 0; font-size: 13px; color: #555;
             border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
         }
-        .source-quote .source-ref {
-            display: block;
-            margin-top: 8px;
-            font-weight: 700;
-            color: var(--primary-dark);
+        .source-quote:hover {
+            background: #e8f5d4;
+            border-left-color: var(--primary);
         }
-
-        /* Big Number */
-        .big-number {
-            font-size: 48px;
-            font-weight: 900;
+        .source-quote::after {
+            content: '📄 クリックでPDF該当箇所を表示';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
             color: var(--primary);
-            text-align: center;
-            margin: 16px 0;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
-        .big-number-label {
-            text-align: center;
-            color: var(--text-light);
-            font-size: 14px;
-        }
-
-        /* Chart Container */
-        .chart-container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 16px;
-            background: white;
-            border-radius: 8px;
+        .source-quote:hover::after { opacity: 1; }
+        .source-quote .source-ref {
+            display: block; margin-top: 8px;
+            font-weight: 700; color: var(--primary-dark);
         }
 
-        /* History Sidebar */
+        .big-number { font-size: 44px; font-weight: 900; color: var(--primary); text-align: center; margin: 14px 0; }
+        .big-number-label { text-align: center; color: var(--text-light); font-size: 13px; }
+        .chart-container { max-width: 560px; margin: 16px auto; padding: 14px; background: white; border-radius: 8px; }
+
+        /* History Panel */
         .history-panel {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 360px;
-            height: 100vh;
-            background: var(--card-bg);
-            box-shadow: -4px 0 20px rgba(0,0,0,0.15);
-            z-index: 100;
-            overflow-y: auto;
+            display: none; position: fixed; top: 0; right: 0;
+            width: 360px; height: 100vh; background: var(--card-bg);
+            box-shadow: -4px 0 20px rgba(0,0,0,0.15); z-index: 100; overflow-y: auto;
         }
         .history-panel.open { display: block; }
         .history-header {
-            padding: 20px 24px;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 16px 20px; background: var(--primary); color: white;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .history-header h3 { font-size: 18px; }
-        .history-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .history-list { padding: 16px; }
+        .history-header h3 { font-size: 16px; }
+        .history-close { background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
+        .history-list { padding: 12px; }
         .history-item {
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 14px; border: 1px solid var(--border); border-radius: 8px;
+            margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
         }
-        .history-item:hover {
-            border-color: var(--primary);
-            background: var(--primary-light);
-        }
-        .history-item-title {
-            font-weight: 700;
-            font-size: 15px;
-            margin-bottom: 4px;
-        }
-        .history-item-date {
-            font-size: 12px;
-            color: var(--text-light);
-        }
-        .history-item-delete {
-            float: right;
-            background: none;
-            border: none;
-            color: #e74c3c;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: -4px;
-        }
-        .history-empty {
-            text-align: center;
-            color: var(--text-light);
-            padding: 40px 20px;
-        }
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.3);
-            z-index: 99;
-        }
+        .history-item:hover { border-color: var(--primary); background: var(--primary-light); }
+        .history-item-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+        .history-item-date { font-size: 12px; color: var(--text-light); }
+        .history-item-delete { float: right; background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 12px; }
+        .history-empty { text-align: center; color: var(--text-light); padding: 40px 20px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 99; }
         .overlay.open { display: block; }
+
+        /* Back button in split view */
+        .back-btn {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            margin-bottom: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .back-btn:hover { background: var(--primary); color: white; }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .header { padding: 16px; flex-direction: column; gap: 12px; }
-            .header h1 { font-size: 18px; }
-            .container { padding: 16px; }
-            .upload-section { padding: 24px; }
-            .result-card { padding: 20px; }
-            .big-number { font-size: 36px; }
+            .header { padding: 12px 16px; }
+            .header h1 { font-size: 16px; }
+            .setup-section { padding: 12px 16px; }
+            .setup-row { flex-direction: column; }
+            .split-container { flex-direction: column; }
+            .analysis-panel, .pdf-panel { flex: none; height: 50vh; }
+            .panel-resizer { width: 100%; height: 6px; cursor: row-resize; }
+            .result-card { padding: 16px; }
+            .big-number { font-size: 32px; }
             .history-panel { width: 100%; }
-            .api-key-section { flex-direction: column; align-items: stretch; }
+            .source-quote::after { display: none; }
         }
 
-        /* Print styles for showing to clients */
         @media print {
-            .header, .upload-section, .api-key-section, .analyze-section,
-            .progress-section, .header-actions { display: none !important; }
-            .results-section { display: block !important; }
+            .header, .setup-section, .analyze-row, .progress-section,
+            .pdf-panel, .panel-resizer, .back-btn, .pdf-controls { display: none !important; }
+            .split-view { display: block !important; height: auto !important; }
+            .split-container { display: block !important; }
+            .analysis-panel { overflow: visible !important; height: auto !important; }
             .result-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
         }
     </style>
@@ -445,45 +425,68 @@
     </div>
 </div>
 
-<!-- Main Content -->
-<div class="container">
-
-    <!-- API Key -->
-    <div class="api-key-section">
-        <label>🔑 Gemini API Key：</label>
-        <input type="password" class="api-key-input" id="apiKeyInput" placeholder="AIzaSy... (ブラウザに保存されます)">
-        <button class="save-key-btn" onclick="saveApiKey()">保存</button>
-    </div>
-
-    <!-- Upload -->
-    <div class="upload-section" id="uploadSection">
-        <div class="upload-icon">📄</div>
-        <div class="upload-title">障害福祉計画PDFをアップロード</div>
-        <div class="upload-desc">都道府県・市区町村の障害福祉計画PDFをドラッグ＆ドロップ、またはボタンで選択</div>
-        <div class="file-input-wrapper">
-            <input type="file" class="file-input" id="pdfInput" accept=".pdf" onchange="handleFileSelect(event)">
-            <button class="upload-btn" onclick="document.getElementById('pdfInput').click()">PDFを選択</button>
+<!-- Setup Section -->
+<div class="setup-section" id="setupSection">
+    <div class="setup-row">
+        <!-- API Key -->
+        <div class="setup-card">
+            <h3>🔑 Gemini API Key</h3>
+            <div class="api-key-row">
+                <input type="password" class="api-key-input" id="apiKeyInput" placeholder="AIzaSy...">
+                <button class="save-key-btn" onclick="saveApiKey()">保存</button>
+            </div>
         </div>
-        <div class="file-name" id="fileName"></div>
-    </div>
-
-    <!-- Analyze Button -->
-    <div class="analyze-section">
-        <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()" disabled>🔍 分析を開始する</button>
-    </div>
-
-    <!-- Progress -->
-    <div class="progress-section" id="progressSection">
-        <div><span class="spinner"></span><span id="progressLabel">PDFを読み込み中...</span></div>
-        <div class="progress-bar-bg">
-            <div class="progress-bar" id="progressBar"></div>
+        <!-- Upload -->
+        <div class="setup-card">
+            <h3>📄 障害福祉計画PDF</h3>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('pdfInput').click()">
+                <input type="file" class="file-input" id="pdfInput" accept=".pdf" onchange="handleFileSelect(event)">
+                <div class="upload-icon">📁</div>
+                <div class="upload-label">ドラッグ＆ドロップ or クリック</div>
+                <div class="file-name" id="fileName"></div>
+            </div>
         </div>
-        <div class="progress-text" id="progressText">準備中...</div>
     </div>
+</div>
 
-    <!-- Results -->
-    <div class="results-section" id="resultsSection"></div>
+<!-- Analyze Button -->
+<div class="analyze-row" id="analyzeRow">
+    <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()" disabled>🔍 分析を開始する</button>
+</div>
 
+<!-- Progress -->
+<div class="progress-section" id="progressSection">
+    <div><span class="spinner"></span><span id="progressLabel">PDFを読み込み中...</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-text" id="progressText">準備中...</div>
+</div>
+
+<!-- Split View: Analysis + PDF -->
+<div class="split-view" id="splitView">
+    <div class="split-container" id="splitContainer">
+        <!-- Left: Analysis Results -->
+        <div class="analysis-panel" id="analysisPanel">
+            <button class="back-btn" onclick="showSetup()">← 新しい分析</button>
+            <div id="resultsContainer"></div>
+        </div>
+        <!-- Resizer -->
+        <div class="panel-resizer" id="panelResizer"></div>
+        <!-- Right: PDF Viewer -->
+        <div class="pdf-panel" id="pdfPanel">
+            <div class="pdf-controls">
+                <label>ページ:</label>
+                <select id="pageSelect" onchange="scrollToPage(this.value)"></select>
+                <label>ズーム:</label>
+                <select id="zoomSelect" onchange="rerenderPdf()">
+                    <option value="1">100%</option>
+                    <option value="1.25">125%</option>
+                    <option value="1.5" selected>150%</option>
+                    <option value="2">200%</option>
+                </select>
+            </div>
+            <div id="pdfPagesContainer"></div>
+        </div>
+    </div>
 </div>
 
 <!-- History Panel -->
@@ -497,7 +500,6 @@
 </div>
 
 <script type="module">
-// PDF.js setup
 import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
 window.pdfjsLib = pdfjsLib;
@@ -506,119 +508,341 @@ window.pdfjsLib = pdfjsLib;
 <script>
 // ========== State ==========
 let selectedFile = null;
-let pdfText = '';
+let pdfDoc = null;
+let pdfTextByPage = {};
+let renderedPages = {};
 const STORAGE_KEY = 'fukushi-plan-history';
 const API_KEY_STORAGE = 'fukushi-plan-api-key';
 
 // ========== Init ==========
 window.addEventListener('DOMContentLoaded', () => {
-    // Load saved API key
     const savedKey = localStorage.getItem(API_KEY_STORAGE);
-    if (savedKey) {
-        document.getElementById('apiKeyInput').value = savedKey;
-    }
+    if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
     // Drag & drop
-    const uploadSection = document.getElementById('uploadSection');
-    uploadSection.addEventListener('dragover', (e) => {
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+    uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadSection.classList.add('dragover');
-    });
-    uploadSection.addEventListener('dragleave', () => {
-        uploadSection.classList.remove('dragover');
-    });
-    uploadSection.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadSection.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) {
-            const file = e.dataTransfer.files[0];
-            if (file.type === 'application/pdf') {
-                selectedFile = file;
-                document.getElementById('fileName').textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
-                document.getElementById('analyzeBtn').disabled = false;
-            }
+        uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].type === 'application/pdf') {
+            setFile(e.dataTransfer.files[0]);
         }
     });
+
+    // Panel resizer
+    initResizer();
 });
 
-// ========== File Handling ==========
+function setFile(file) {
+    selectedFile = file;
+    document.getElementById('fileName').textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+    document.getElementById('uploadArea').classList.add('has-file');
+    document.getElementById('analyzeBtn').disabled = false;
+}
+
 function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) {
-        selectedFile = file;
-        document.getElementById('fileName').textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
-        document.getElementById('analyzeBtn').disabled = false;
-    }
+    if (event.target.files[0]) setFile(event.target.files[0]);
 }
 window.handleFileSelect = handleFileSelect;
 
-// ========== API Key ==========
 function saveApiKey() {
     const key = document.getElementById('apiKeyInput').value.trim();
-    if (key) {
-        localStorage.setItem(API_KEY_STORAGE, key);
-        alert('APIキーを保存しました ✅');
-    }
+    if (key) { localStorage.setItem(API_KEY_STORAGE, key); alert('APIキーを保存しました ✅'); }
 }
 window.saveApiKey = saveApiKey;
 
-// ========== PDF Text Extraction ==========
-async function extractPdfText(file) {
+// ========== View Switching ==========
+function showSplitView() {
+    document.getElementById('setupSection').style.display = 'none';
+    document.getElementById('analyzeRow').style.display = 'none';
+    document.getElementById('progressSection').style.display = 'none';
+    document.getElementById('splitView').style.display = 'block';
+}
+
+function showSetup() {
+    document.getElementById('splitView').style.display = 'none';
+    document.getElementById('setupSection').style.display = 'block';
+    document.getElementById('analyzeRow').style.display = 'block';
+}
+window.showSetup = showSetup;
+
+// ========== PDF Processing ==========
+async function loadPdf(file) {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
-    const totalPages = pdf.numPages;
+    pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    pdfTextByPage = {};
+
+    const totalPages = pdfDoc.numPages;
+    const pageSelect = document.getElementById('pageSelect');
+    pageSelect.innerHTML = '';
 
     for (let i = 1; i <= totalPages; i++) {
-        updateProgress(10 + (i / totalPages) * 30, `PDFを読み込み中... (${i}/${totalPages}ページ)`);
-        const page = await pdf.getPage(i);
+        updateProgress(5 + (i / totalPages) * 25, `PDFを読み込み中... (${i}/${totalPages}ページ)`);
+        const page = await pdfDoc.getPage(i);
         const content = await page.getTextContent();
-        const pageText = content.items.map(item => item.str).join(' ');
+        pdfTextByPage[i] = content.items.map(item => ({
+            str: item.str,
+            x: item.transform[4],
+            y: item.transform[5],
+            width: item.width,
+            height: item.height || 12,
+            transform: item.transform
+        }));
+
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${i} / ${totalPages}`;
+        pageSelect.appendChild(opt);
+    }
+
+    let fullText = '';
+    for (let i = 1; i <= totalPages; i++) {
+        const pageText = pdfTextByPage[i].map(item => item.str).join(' ');
         fullText += `\n\n--- ページ ${i} ---\n${pageText}`;
     }
     return fullText;
 }
 
+async function renderPdfPages() {
+    const container = document.getElementById('pdfPagesContainer');
+    container.innerHTML = '';
+    renderedPages = {};
+    const zoom = parseFloat(document.getElementById('zoomSelect').value);
+    const totalPages = pdfDoc.numPages;
+
+    for (let i = 1; i <= totalPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const viewport = page.getViewport({ scale: zoom });
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-container';
+        wrapper.id = `pdf-page-${i}`;
+        wrapper.style.width = viewport.width + 'px';
+        wrapper.style.maxWidth = '100%';
+
+        const label = document.createElement('div');
+        label.className = 'pdf-page-label';
+        label.textContent = `p.${i}`;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        // Highlight overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'pdf-highlight-overlay';
+        overlay.id = `pdf-overlay-${i}`;
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(canvas);
+        wrapper.appendChild(overlay);
+        container.appendChild(wrapper);
+
+        renderedPages[i] = { wrapper, canvas, overlay, viewport, page };
+    }
+}
+
+async function rerenderPdf() {
+    if (pdfDoc) await renderPdfPages();
+}
+window.rerenderPdf = rerenderPdf;
+
+function scrollToPage(pageNum) {
+    const el = document.getElementById(`pdf-page-${pageNum}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.scrollToPage = scrollToPage;
+
+// ========== Highlight on PDF ==========
+async function highlightTextOnPage(pageNum, searchText) {
+    if (!pdfDoc || !renderedPages[pageNum]) return;
+
+    const { overlay, viewport, page } = renderedPages[pageNum];
+    overlay.innerHTML = '';
+
+    if (!searchText || searchText.length < 4) return;
+
+    const textContent = await page.getTextContent();
+    const zoom = parseFloat(document.getElementById('zoomSelect').value);
+
+    // Normalize search text
+    const normalizedSearch = searchText.replace(/\s+/g, '').toLowerCase();
+
+    // Build page text with position mapping
+    let runningText = '';
+    const charPositions = [];
+
+    for (const item of textContent.items) {
+        const str = item.str;
+        for (let c = 0; c < str.length; c++) {
+            charPositions.push({
+                char: str[c],
+                x: item.transform[4] + (item.width || 0) * (c / Math.max(str.length, 1)),
+                y: item.transform[5],
+                w: (item.width || 0) / Math.max(str.length, 1),
+                h: item.height || 12,
+                transform: item.transform
+            });
+            runningText += str[c].toLowerCase();
+        }
+    }
+
+    const runningNoSpace = runningText.replace(/\s+/g, '');
+
+    // Find matches
+    let searchIdx = runningNoSpace.indexOf(normalizedSearch);
+    if (searchIdx === -1) {
+        // Try partial match (first 20 chars)
+        const partial = normalizedSearch.substring(0, 20);
+        searchIdx = runningNoSpace.indexOf(partial);
+    }
+
+    if (searchIdx === -1) return;
+
+    // Map back to char positions (accounting for removed spaces)
+    let noSpaceIdx = 0;
+    let startOrigIdx = -1;
+    let endOrigIdx = -1;
+    const matchLen = Math.min(normalizedSearch.length, 60);
+
+    for (let i = 0; i < runningText.length; i++) {
+        if (runningText[i] !== ' ') {
+            if (noSpaceIdx === searchIdx) startOrigIdx = i;
+            if (noSpaceIdx === searchIdx + matchLen - 1) { endOrigIdx = i; break; }
+            noSpaceIdx++;
+        }
+    }
+
+    if (startOrigIdx === -1 || endOrigIdx === -1) return;
+
+    // Get bounding boxes for matched characters
+    const matchedChars = charPositions.slice(startOrigIdx, endOrigIdx + 1);
+    if (matchedChars.length === 0) return;
+
+    // Group by Y position (same line)
+    const lines = {};
+    for (const ch of matchedChars) {
+        const yKey = Math.round(ch.y);
+        if (!lines[yKey]) lines[yKey] = { minX: ch.x, maxX: ch.x + ch.w, y: ch.y, h: ch.h };
+        else {
+            lines[yKey].minX = Math.min(lines[yKey].minX, ch.x);
+            lines[yKey].maxX = Math.max(lines[yKey].maxX, ch.x + ch.w);
+        }
+    }
+
+    // Create highlight rectangles
+    for (const line of Object.values(lines)) {
+        const rect = document.createElement('div');
+        rect.className = 'pdf-text-highlight';
+
+        // Transform PDF coordinates to canvas coordinates
+        const canvasWidth = renderedPages[pageNum].canvas.width;
+        const canvasHeight = renderedPages[pageNum].canvas.height;
+        const pageWidth = viewport.width / zoom;
+        const pageHeight = viewport.height / zoom;
+
+        const scaleX = canvasWidth / pageWidth;
+        const scaleY = canvasHeight / pageHeight;
+
+        // PDF coordinates: origin at bottom-left, canvas: origin at top-left
+        const left = (line.minX * scaleX / (window.devicePixelRatio || 1));
+        const width = ((line.maxX - line.minX) * scaleX / (window.devicePixelRatio || 1));
+        const top = ((pageHeight - line.y - line.h) * scaleY / (window.devicePixelRatio || 1));
+        const height = (line.h * scaleY * 1.5 / (window.devicePixelRatio || 1));
+
+        // Convert to percentage for responsive scaling
+        const containerWidth = renderedPages[pageNum].canvas.clientWidth || renderedPages[pageNum].canvas.width;
+        const containerHeight = renderedPages[pageNum].canvas.clientHeight || renderedPages[pageNum].canvas.height;
+
+        rect.style.left = `${(left / containerWidth) * 100}%`;
+        rect.style.top = `${(top / containerHeight) * 100}%`;
+        rect.style.width = `${(width / containerWidth) * 100}%`;
+        rect.style.height = `${(height / containerHeight) * 100}%`;
+
+        overlay.appendChild(rect);
+    }
+
+    // Scroll to this page
+    scrollToPage(pageNum);
+    document.getElementById('pageSelect').value = pageNum;
+}
+
+// ========== Source Quote Click Handler ==========
+function setupSourceQuoteClicks() {
+    document.querySelectorAll('.source-quote').forEach(quote => {
+        quote.addEventListener('click', () => {
+            // Extract page number from source-ref
+            const refEl = quote.querySelector('.source-ref');
+            const refText = refEl ? refEl.textContent : quote.textContent;
+
+            // Try to find page number: p.23, ページ23, P23, etc.
+            const pageMatch = refText.match(/[pPｐ][\.\s\.]*(\d+)/i) ||
+                             refText.match(/ページ\s*(\d+)/) ||
+                             refText.match(/(\d+)\s*ページ/) ||
+                             refText.match(/第(\d+)ページ/);
+
+            // Extract the quoted text for highlighting
+            const quoteText = quote.childNodes[0]?.textContent?.trim() ||
+                             quote.textContent.replace(refEl?.textContent || '', '').trim();
+
+            if (pageMatch) {
+                const pageNum = parseInt(pageMatch[1]);
+                highlightTextOnPage(pageNum, quoteText);
+            } else {
+                // Try to find text across all pages
+                findAndHighlightText(quoteText);
+            }
+        });
+    });
+}
+
+async function findAndHighlightText(searchText) {
+    if (!pdfDoc || !searchText) return;
+    const normalized = searchText.replace(/\s+/g, '').toLowerCase().substring(0, 30);
+
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const pageText = pdfTextByPage[i].map(item => item.str).join('').toLowerCase();
+        if (pageText.includes(normalized)) {
+            await highlightTextOnPage(i, searchText);
+            return;
+        }
+    }
+    alert('該当するテキストがPDF内に見つかりませんでした');
+}
+
 // ========== Analysis ==========
 async function startAnalysis() {
     const apiKey = document.getElementById('apiKeyInput').value.trim();
-    if (!apiKey) {
-        alert('Gemini APIキーを入力してください');
-        return;
-    }
-    if (!selectedFile) {
-        alert('PDFファイルを選択してください');
-        return;
-    }
+    if (!apiKey) { alert('Gemini APIキーを入力してください'); return; }
+    if (!selectedFile) { alert('PDFファイルを選択してください'); return; }
 
-    // Show progress
     document.getElementById('progressSection').style.display = 'block';
-    document.getElementById('resultsSection').style.display = 'none';
     document.getElementById('analyzeBtn').disabled = true;
     updateProgress(5, 'PDFを読み込み中...');
 
     try {
-        // Step 1: Extract PDF text
-        pdfText = await extractPdfText(selectedFile);
-        updateProgress(40, 'PDFの読み込み完了。Gemini APIに送信中...');
+        const fullText = await loadPdf(selectedFile);
+        updateProgress(35, 'PDFの読み込み完了。Gemini APIに送信中...');
 
-        // Step 2: Send to Gemini with the analysis prompt
-        const analysisResult = await callGeminiAPI(apiKey, pdfText);
-        updateProgress(90, '分析結果を整形中...');
+        const analysisResult = await callGeminiAPI(apiKey, fullText);
+        updateProgress(85, 'PDFページをレンダリング中...');
 
-        // Step 3: Render results
+        // Render PDF pages in the right panel
+        await renderPdfPages();
+        updateProgress(95, '分析結果を表示中...');
+
+        // Render analysis results
         renderResults(analysisResult);
-        updateProgress(100, '完了！');
 
-        // Step 4: Save to history
+        // Save to history
         saveToHistory(selectedFile.name, analysisResult);
 
-        // Hide progress, show results
-        setTimeout(() => {
-            document.getElementById('progressSection').style.display = 'none';
-            document.getElementById('resultsSection').style.display = 'block';
-            document.getElementById('analyzeBtn').disabled = false;
-        }, 500);
+        updateProgress(100, '完了！');
+        setTimeout(() => showSplitView(), 300);
 
     } catch (error) {
         console.error('Analysis error:', error);
@@ -629,12 +853,11 @@ async function startAnalysis() {
 }
 window.startAnalysis = startAnalysis;
 
-// ========== Gemini API Call ==========
+// ========== Gemini API ==========
 async function callGeminiAPI(apiKey, pdfContent) {
-    // Truncate if too long (Gemini has token limits)
     const maxChars = 900000;
     const truncated = pdfContent.length > maxChars
-        ? pdfContent.substring(0, maxChars) + '\n\n[※ 文書が長いため一部省略されています]'
+        ? pdfContent.substring(0, maxChars) + '\n\n[※ 文書が長いため一部省略]'
         : pdfContent;
 
     const systemPrompt = `あなたは就労支援事業所の運営コンサルタントです。
@@ -646,41 +869,24 @@ async function callGeminiAPI(apiKey, pdfContent) {
 ━━━━━━━━━━━━━━━━━━━━
 
 【1. この地域の市場は伸びるか？】
-
 - 手帳所持者の推移（特に精神手帳の増減率）
 - B型・A型・就労移行それぞれの利用見込量（R6→R8の変化）
 - 「伸びる／横ばい／縮む」を判断し、根拠となる数字を明示
 
 【2. 届いていない潜在層はどこにいるか？】
-
 以下の手順で、この地域の「就労支援に繋がっていない潜在層」を推計してください。
 
 ■ ステップ1：就労年齢の手帳所持者数を算出
 - 知的障害者手帳（療育手帳）の所持者数
 - 精神障害者保健福祉手帳の所持者数
 - 上記2つの合計を出す
-※ 身体障害者手帳は除外してください。
-身体手帳所持者の約7割は65歳以上であり、
-就労支援の主な対象層と異なるためです。
-この除外理由は結果にも注記してください。
-- 年齢別データがあれば18〜64歳に絞る。
-なければ全年齢の合計を使い、
-【注意】年齢で絞れていない旨を明記。
+※ 身体障害者手帳は除外。身体手帳所持者の約7割は65歳以上であり、就労支援の主な対象層と異なるため。この除外理由は結果にも注記してください。
+- 年齢別データがあれば18〜64歳に絞る。なければ全年齢の合計を使い、【注意】年齢で絞れていない旨を明記。
 
 ■ 手帳所持者数が計画書に記載されていない場合
-以下の順で対応してください：
-1. 厚生労働省「衛生行政報告例」等の全国統計から
-当該都道府県・政令市の手帳所持者数を引用し、
-【外部データ】と明記して使用する
-2. それも見つからない場合は、
-「この計画書には手帳所持者の総数が記載されていないため、
-潜在層Aの算出ができません。
-○○市（県）の手帳所持者数データを追加で提供してください」
-とユーザーに伝える
-3. 手帳データなしで推計を試みる場合でも、
-「就労系利用者数 ÷ 相談窓口数」のような
-既に繋がっている人の計算は行わないこと。
-潜在層とは「まだ繋がっていない人」の規模を指す
+1. 厚生労働省「衛生行政報告例」等の全国統計から当該都道府県・政令市の手帳所持者数を引用し、【外部データ】と明記して使用する
+2. それも見つからない場合は、「この計画書には手帳所持者の総数が記載されていないため、潜在層Aの算出ができません」とユーザーに伝える
+3. 手帳データなしで推計を試みる場合でも、「就労系利用者数 ÷ 相談窓口数」のような既に繋がっている人の計算は行わないこと
 
 ■ ステップ2：就労系サービスの利用者数を合算
 - B型の利用者数（人/月）
@@ -689,299 +895,210 @@ async function callGeminiAPI(apiKey, pdfContent) {
 - 上記3つの合計 ＝ 就労系サービス利用者数
 
 ■ ステップ3：潜在層Aを算出
-知的＋精神の手帳所持者数
-− 就労系サービス利用者数（B型＋A型＋移行）
-＝ 手帳を持ちながら就労支援を利用していない人数
-
-※ この数値には重度障害で就労が困難な方や、
-一般就労中の方も含まれます。
-全員が即座に利用対象とは限りませんが、
-「制度に繋がっていない層の規模感」として
-提示してください。
+知的＋精神の手帳所持者数 − 就労系サービス利用者数 ＝ 手帳を持ちながら就労支援を利用していない人数
+※ この数値には重度障害で就労が困難な方や一般就労中の方も含まれます。全員が即座に利用対象とは限りませんが、「制度に繋がっていない層の規模感」として提示してください。
 
 ■ ステップ4：潜在層Bを示唆（データがあれば）
-- 精神通院医療（自立支援医療）受給者数
-− 精神手帳所持者数
-＝ 通院しているが手帳を取得していない人数
-（＝手帳を取れば就労支援の対象になり得る層）
-- アンケートで「サービスを知らない」
-「利用方法が分からない」の回答割合があれば引用
+- 精神通院医療（自立支援医療）受給者数 − 精神手帳所持者数 ＝ 通院しているが手帳を取得していない人数
+- アンケートで「サービスを知らない」「利用方法が分からない」の回答割合があれば引用
 
 ■ まとめ
 - 潜在層A（手帳あり×未利用）の実数
 - 潜在層B（手帳未取得だが通院中）の推計値
 - 利用率（就労系利用者 ÷ 知的＋精神手帳所持者）を%で算出
-- 「この地域には少なくとも○○人が
-就労支援に繋がっていない」の結論文
+- 「この地域には少なくとも○○人が就労支援に繋がっていない」の結論文
 
 【3. この地域で勝つための差別化ポイント】
-
 - B型・A型・就労移行それぞれの既存事業所数と競合密度
 - 既存事業所が対象としている障害種別の偏り
 - 手帳データから見た「増えているのに受け皿が少ない」障害種別
-- A型の場合：ハローワーク・Indeedなど求人媒体との違い（福祉サービスとして探す層、家族・相談員が見る層）
+- A型の場合：ハローワーク・Indeedなど求人媒体との違い
 - 就労移行の場合：法定雇用率引き上げ（R8.7月〜2.7%）で企業の採用ニーズが増える影響
 
 【4. ネットでの情報発信が有効な根拠】
-
-上記1〜3を踏まえて、以下の論理構造で整理してください：
-
 1. 潜在層Aが○○人いる（実数）
 2. 相談支援窓口は○箇所しかない（キャパシティの限界）
-3. 潜在層A ÷ 相談窓口数 ＝ 1窓口あたり○○人の未利用者を
-新たにサービスに繋げる必要がある
+3. 潜在層A ÷ 相談窓口数 ＝ 1窓口あたり○○人の未利用者
 → 紹介ルートだけでは物理的に回らない
 4. アンケートでインターネットで情報収集している割合（データがあれば）
 5. だからインターネットでの事業所情報発信が有効
-6. 「相談支援の紹介ルートだけでは届かない層がこれだけいる。
-だからネットでの情報発信が必要」という結論文
-
-※ 相談窓口の数は「既存利用者の対応状況」ではなく、
-「まだ繋がっていない潜在層に対するキャパシティの限界」
-の根拠として使ってください。
+6. 結論文
 
 ━━━━━━━━━━━━━━━━━━━━
 
 ■ 数値の引用ルール
-
-1. 数値は必ず計画書から直接引用し、引用元のページや項目名を明記してください。
-例：「第7期計画 見込量一覧表より、B型利用人数 R8=13,330人/月」
-
-2. 計画書に記載がない数値を推計する場合は、
-必ず【推計】と明記し、計算式と使用した前提を示してください。
-
-3. 計画書に根拠がない一般論は、【一般論】と明記してください。
-
-4. 見込量を引用する際は、「R6年度」「R7年度」「R8年度」の3年分を並べ、
-増減率はR6→R8で計算してください。
-
-5. 数値を引用する際は、該当する表の見出しも記載してください。
-
-6. 手帳所持者数は、PDFのグラフまたは表から「各年度末」の数値を直接読み取ってください。
-
-7. 見込量テーブルが複数ある場合、第7期計画（R6〜R8）の見込量を優先してください。
-
-8. 見込量の単位に注意してください。「利用人数（人/月）」を使用してください。
-
-9. 「利用見込量」と「一般就労への移行者数目標」は別物です。混同しないでください。
+1. 数値は必ず計画書から直接引用し、引用元のページや項目名を明記
+2. 推計する場合は【推計】と明記し計算式を示す
+3. 一般論は【一般論】と明記
+4. 見込量はR6/R7/R8の3年分を並べ、増減率はR6→R8
+5. 該当する表の見出しも記載
+6. 手帳所持者数はグラフ・表から実数を読み取る
+7. 第7期計画の見込量を優先
+8. 単位は「利用人数（人/月）」を使用
+9. 「利用見込量」と「一般就労への移行者数目標」を混同しない
 
 ━━━━━━━━━━━━━━━━━━━━
 
-■ 出力フォーマット指示
+■ 出力フォーマット（HTML）
 
 回答は以下のHTMLフォーマットで出力してください。マークダウンではなくHTMLで返してください。
 
-各セクションを <div class="result-section"> で囲み、以下のクラスを使ってください：
+各セクションを <div class="result-card"> で囲み、以下のクラスを使ってください：
 
 - セクション見出し: <h2>📊 セクションタイトル</h2>
 - サブ見出し: <h3>サブタイトル</h3>
 - 重要な結論: <div class="highlight-box conclusion">結論文</div>
 - 警告・注意: <div class="highlight-box warning">注意事項</div>
 - 補足情報: <div class="highlight-box">補足</div>
-- 引用: <div class="source-quote">引用文<span class="source-ref">── 出典情報</span></div>
-- 大きな数字: <div class="big-number">12,345人</div><div class="big-number-label">潜在層A（手帳あり×未利用）</div>
-- 表: <table><thead><tr><th>列1</th><th>列2</th></tr></thead><tbody>...</tbody></table>
-- グラフ用データ: <div class="chart-placeholder" data-chart-type="bar" data-labels='["R6","R7","R8"]' data-datasets='[{"label":"B型","data":[100,110,120]},{"label":"A型","data":[50,55,60]}]'></div>
 
-グラフ用データは上記のdata属性形式で出力してください。JavaScriptで自動的にChart.jsグラフに変換します。`;
+- 引用（※ 重要：data-page属性にページ番号を入れてください）:
+<div class="source-quote" data-page="23" data-text="引用文のテキスト">
+引用文
+<span class="source-ref">── 第7期計画 p.23 表3-2</span>
+</div>
 
-    const requestBody = {
-        contents: [{
-            parts: [{
-                text: `以下は障害福祉計画のPDFから抽出したテキストです。上記の分析フレームワークに従って分析してください。\n\n${truncated}`
-            }]
-        }],
-        systemInstruction: {
-            parts: [{ text: systemPrompt }]
-        },
-        generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 8192,
-        }
-    };
+- 大きな数字: <div class="big-number">12,345人</div><div class="big-number-label">ラベル</div>
+- 表: <table><thead>...</thead><tbody>...</tbody></table>
+- グラフ: <div class="chart-placeholder" data-chart-type="bar" data-labels='["R6","R7","R8"]' data-datasets='[{"label":"B型","data":[100,110,120]}]'></div>
+
+引用には必ず data-page と data-text 属性をつけてください。クリックするとPDFの該当ページにジャンプしてハイライト表示します。`;
 
     const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: `以下は障害福祉計画のPDFから抽出したテキストです。分析してください。\n\n${truncated}` }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
+            })
         }
     );
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+        const err = await response.json();
+        throw new Error(`Gemini API Error: ${err.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Gemini APIから有効な応答がありませんでした');
-
     return text;
 }
 
 // ========== Render Results ==========
 function renderResults(htmlContent) {
-    const container = document.getElementById('resultsSection');
+    const container = document.getElementById('resultsContainer');
+    let cleaned = htmlContent.replace(/^```html?\s*/i, '').replace(/```\s*$/i, '').trim();
 
-    // Clean up: remove markdown code fences if Gemini wraps in ```html
-    let cleaned = htmlContent
-        .replace(/^```html?\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-
-    // Wrap in result-card if not already structured
-    if (!cleaned.includes('result-section') && !cleaned.includes('result-card')) {
+    if (!cleaned.includes('result-card')) {
         cleaned = `<div class="result-card">${cleaned}</div>`;
     }
-
-    // Wrap each result-section in a card
     cleaned = cleaned.replace(/<div class="result-section">/g, '<div class="result-card">');
 
     container.innerHTML = cleaned;
-    container.style.display = 'block';
-
-    // Render charts from placeholders
     renderCharts();
-
-    // Smooth scroll to results
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setupSourceQuoteClicks();
 }
 
-// ========== Chart Rendering ==========
+// ========== Charts ==========
 function renderCharts() {
-    document.querySelectorAll('.chart-placeholder').forEach((placeholder, index) => {
+    document.querySelectorAll('.chart-placeholder').forEach((ph, idx) => {
         try {
-            const chartType = placeholder.dataset.chartType || 'bar';
-            const labels = JSON.parse(placeholder.dataset.labels || '[]');
-            const datasets = JSON.parse(placeholder.dataset.datasets || '[]');
-
+            const type = ph.dataset.chartType || 'bar';
+            const labels = JSON.parse(ph.dataset.labels || '[]');
+            const datasets = JSON.parse(ph.dataset.datasets || '[]');
             const canvas = document.createElement('canvas');
-            canvas.id = `chart-${index}`;
-            canvas.style.maxHeight = '300px';
-
+            canvas.id = `chart-${idx}`;
+            canvas.style.maxHeight = '280px';
             const wrapper = document.createElement('div');
             wrapper.className = 'chart-container';
             wrapper.appendChild(canvas);
-
-            placeholder.replaceWith(wrapper);
-
+            ph.replaceWith(wrapper);
             const colors = ['#70b21f', '#ff6b35', '#1976d2', '#9c27b0', '#00bcd4'];
             const bgColors = ['rgba(112,178,31,0.2)', 'rgba(255,107,53,0.2)', 'rgba(25,118,210,0.2)', 'rgba(156,39,176,0.2)', 'rgba(0,188,212,0.2)'];
-
             new Chart(canvas, {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: datasets.map((ds, i) => ({
-                        ...ds,
-                        borderColor: colors[i % colors.length],
-                        backgroundColor: chartType === 'line' ? bgColors[i % bgColors.length] : colors[i % colors.length],
-                        borderWidth: 2,
-                        fill: chartType === 'line',
-                        tension: 0.3,
+                type, data: {
+                    labels, datasets: datasets.map((ds, i) => ({
+                        ...ds, borderColor: colors[i % colors.length],
+                        backgroundColor: type === 'line' ? bgColors[i % bgColors.length] : colors[i % colors.length],
+                        borderWidth: 2, fill: type === 'line', tension: 0.3,
                     }))
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: { font: { family: 'Noto Sans JP', size: 13 } }
-                        }
-                    },
-                    scales: {
-                        y: { beginAtZero: false }
-                    }
-                }
+                options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Noto Sans JP', size: 13 } } } }, scales: { y: { beginAtZero: false } } }
             });
-        } catch (e) {
-            console.error('Chart render error:', e);
-        }
+        } catch (e) { console.error('Chart error:', e); }
     });
 }
 
 // ========== Progress ==========
-function updateProgress(percent, label) {
-    document.getElementById('progressBar').style.width = `${percent}%`;
+function updateProgress(pct, label) {
+    document.getElementById('progressBar').style.width = `${pct}%`;
     if (label) document.getElementById('progressLabel').textContent = label;
-    document.getElementById('progressText').textContent = `${Math.round(percent)}%`;
+    document.getElementById('progressText').textContent = `${Math.round(pct)}%`;
 }
 
 // ========== History ==========
-function getHistory() {
-    try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch { return []; }
-}
+function getHistory() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
 
-function saveToHistory(fileName, analysisHtml) {
+function saveToHistory(fileName, html) {
     const history = getHistory();
-    const entry = {
-        id: Date.now().toString(),
-        fileName: fileName,
-        date: new Date().toLocaleString('ja-JP'),
-        region: extractRegionName(analysisHtml),
-        html: analysisHtml,
-    };
-    history.unshift(entry);
-    // Keep max 50 entries
+    history.unshift({
+        id: Date.now().toString(), fileName, date: new Date().toLocaleString('ja-JP'),
+        region: (html.match(/([\u4e00-\u9faf]{2,6}[都道府県市区町村])/) || [])[1] || '不明',
+        html,
+    });
     if (history.length > 50) history.pop();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-}
-
-function extractRegionName(html) {
-    // Try to find region name from content
-    const match = html.match(/([\u4e00-\u9faf]{2,6}[都道府県市区町村])/);
-    return match ? match[1] : '不明な地域';
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); } catch(e) {
+        // If localStorage is full, remove oldest entries
+        while (history.length > 5) { history.pop(); }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    }
 }
 
 function toggleHistory() {
     const panel = document.getElementById('historyPanel');
     const overlay = document.getElementById('overlay');
     const isOpen = panel.classList.contains('open');
-
-    if (isOpen) {
-        panel.classList.remove('open');
-        overlay.classList.remove('open');
-    } else {
-        renderHistoryList();
-        panel.classList.add('open');
-        overlay.classList.add('open');
-    }
+    if (isOpen) { panel.classList.remove('open'); overlay.classList.remove('open'); }
+    else { renderHistoryList(); panel.classList.add('open'); overlay.classList.add('open'); }
 }
 window.toggleHistory = toggleHistory;
 
 function renderHistoryList() {
     const history = getHistory();
     const container = document.getElementById('historyList');
-
-    if (history.length === 0) {
-        container.innerHTML = '<div class="history-empty">📭 まだ分析履歴がありません</div>';
-        return;
-    }
-
-    container.innerHTML = history.map(entry => `
-        <div class="history-item" onclick="loadFromHistory('${entry.id}')">
-            <button class="history-item-delete" onclick="event.stopPropagation(); deleteHistory('${entry.id}')">🗑 削除</button>
-            <div class="history-item-title">📄 ${entry.region || entry.fileName}</div>
-            <div class="history-item-date">${entry.fileName} ─ ${entry.date}</div>
+    if (history.length === 0) { container.innerHTML = '<div class="history-empty">📭 まだ履歴なし</div>'; return; }
+    container.innerHTML = history.map(e => `
+        <div class="history-item" onclick="loadFromHistory('${e.id}')">
+            <button class="history-item-delete" onclick="event.stopPropagation();deleteHistory('${e.id}')">🗑</button>
+            <div class="history-item-title">📄 ${e.region || e.fileName}</div>
+            <div class="history-item-date">${e.fileName} ─ ${e.date}</div>
         </div>
     `).join('');
 }
 
 function loadFromHistory(id) {
-    const history = getHistory();
-    const entry = history.find(h => h.id === id);
+    const entry = getHistory().find(h => h.id === id);
     if (entry) {
         renderResults(entry.html);
+        // Show split view without PDF (history mode)
+        document.getElementById('setupSection').style.display = 'none';
+        document.getElementById('analyzeRow').style.display = 'none';
+        document.getElementById('splitView').style.display = 'block';
+        // Hide PDF panel in history mode if no PDF loaded
+        if (!pdfDoc) {
+            document.getElementById('pdfPanel').style.display = 'none';
+            document.getElementById('panelResizer').style.display = 'none';
+        }
         toggleHistory();
     }
 }
 window.loadFromHistory = loadFromHistory;
 
 function deleteHistory(id) {
-    if (!confirm('この履歴を削除しますか？')) return;
+    if (!confirm('削除しますか？')) return;
     const history = getHistory().filter(h => h.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     renderHistoryList();
@@ -990,50 +1107,60 @@ window.deleteHistory = deleteHistory;
 
 // ========== Export ==========
 function exportReport() {
-    const results = document.getElementById('resultsSection');
-    if (!results.innerHTML.trim()) {
-        alert('エクスポートする分析結果がありません');
-        return;
-    }
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="ja">
-        <head>
-            <meta charset="UTF-8">
-            <title>障害福祉計画 分析レポート</title>
-            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
-            <style>
-                body { font-family: 'Noto Sans JP', sans-serif; max-width: 900px; margin: 0 auto; padding: 40px; color: #2d3436; line-height: 1.7; }
-                h1 { text-align: center; color: #5a9118; border-bottom: 3px solid #70b21f; padding-bottom: 12px; margin-bottom: 32px; }
-                h2 { color: #5a9118; border-bottom: 2px solid #70b21f; padding-bottom: 8px; margin-top: 32px; }
-                table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-                th { background: #70b21f; color: white; padding: 10px 14px; text-align: left; }
-                td { padding: 8px 14px; border-bottom: 1px solid #ddd; }
-                tr:nth-child(even) { background: #f5f9ed; }
-                .highlight-box { padding: 14px 18px; border-radius: 6px; margin: 14px 0; }
-                .highlight-box.conclusion { background: #e3f2fd; border-left: 4px solid #1976d2; font-weight: 700; font-size: 16px; }
-                .highlight-box.warning { background: #fff3e0; border-left: 4px solid #ff6b35; }
-                .source-quote { background: #f5f5f5; border-left: 4px solid #9e9e9e; padding: 10px 14px; margin: 10px 0; font-size: 13px; color: #555; }
-                .source-ref { display: block; margin-top: 6px; font-weight: 700; color: #5a9118; }
-                .big-number { font-size: 42px; font-weight: 900; color: #70b21f; text-align: center; margin: 12px 0; }
-                .big-number-label { text-align: center; color: #636e72; font-size: 13px; }
-                .result-card { margin-bottom: 24px; }
-                .chart-container, .chart-placeholder { display: none; }
-                @media print { body { padding: 20px; } }
-            </style>
-        </head>
-        <body>
-            <h1>📊 障害福祉計画 分析レポート</h1>
-            <p style="text-align:center;color:#636e72;">生成日: ${new Date().toLocaleString('ja-JP')}</p>
-            ${results.innerHTML}
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
+    const results = document.getElementById('resultsContainer');
+    if (!results?.innerHTML?.trim()) { alert('レポートがありません'); return; }
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+        <title>障害福祉計画 分析レポート</title>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+        <style>body{font-family:'Noto Sans JP',sans-serif;max-width:900px;margin:0 auto;padding:40px;color:#2d3436;line-height:1.7}
+        h1{text-align:center;color:#5a9118;border-bottom:3px solid #70b21f;padding-bottom:12px;margin-bottom:32px}
+        h2{color:#5a9118;border-bottom:2px solid #70b21f;padding-bottom:8px;margin-top:32px}
+        table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#70b21f;color:#fff;padding:10px 14px;text-align:left}
+        td{padding:8px 14px;border-bottom:1px solid #ddd}tr:nth-child(even){background:#f5f9ed}
+        .highlight-box{padding:14px 18px;border-radius:6px;margin:14px 0}
+        .highlight-box.conclusion{background:#e3f2fd;border-left:4px solid #1976d2;font-weight:700;font-size:16px}
+        .highlight-box.warning{background:#fff3e0;border-left:4px solid #ff6b35}
+        .source-quote{background:#f5f5f5;border-left:4px solid #9e9e9e;padding:10px 14px;margin:10px 0;font-size:13px;color:#555}
+        .source-ref{display:block;margin-top:6px;font-weight:700;color:#5a9118}
+        .big-number{font-size:42px;font-weight:900;color:#70b21f;text-align:center;margin:12px 0}
+        .big-number-label{text-align:center;color:#636e72;font-size:13px}
+        .result-card{margin-bottom:24px}.chart-container,.chart-placeholder{display:none}</style>
+        </head><body><h1>📊 障害福祉計画 分析レポート</h1>
+        <p style="text-align:center;color:#636e72">生成日: ${new Date().toLocaleString('ja-JP')}</p>
+        ${results.innerHTML}</body></html>`);
+    w.document.close();
 }
 window.exportReport = exportReport;
+
+// ========== Panel Resizer ==========
+function initResizer() {
+    const resizer = document.getElementById('panelResizer');
+    const left = document.getElementById('analysisPanel');
+    const container = document.getElementById('splitContainer');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        resizer.classList.add('dragging');
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            resizer.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMouseMove);
+        }, { once: true });
+    });
+
+    function onMouseMove(e) {
+        if (!isResizing) return;
+        const rect = container.getBoundingClientRect();
+        const pct = ((e.clientX - rect.left) / rect.width) * 100;
+        if (pct > 20 && pct < 80) {
+            left.style.flex = 'none';
+            left.style.width = pct + '%';
+        }
+    }
+}
 </script>
 
 </body>
