@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>障害福祉計画レビュワー</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #70b21f;
+            --primary-dark: #5a9118;
+            --primary-light: #e8f5d4;
+            --accent: #ff6b35;
+            --bg: #f8faf5;
+            --card-bg: #ffffff;
+            --text: #2d3436;
+            --text-light: #636e72;
+            --border: #dfe6e9;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.3); }
+
+        /* Main Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 40px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            border: 2px dashed var(--border);
+            transition: border-color 0.3s;
+        }
+        .upload-section.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        .upload-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .upload-desc { color: var(--text-light); margin-bottom: 20px; }
+
+        .file-input-wrapper {
+            display: inline-block;
+            position: relative;
+        }
+        .file-input { display: none; }
+        .upload-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .upload-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+        .file-name {
+            margin-top: 12px;
+            font-size: 14px;
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+
+        /* API Key Section */
+        .api-key-section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .api-key-section label {
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .api-key-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .api-key-input:focus { outline: none; border-color: var(--primary); }
+        .save-key-btn {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid var(--primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+        }
+
+        /* Analyze Button */
+        .analyze-section {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .analyze-btn {
+            background: linear-gradient(135deg, var(--accent), #e55a2b);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+        }
+        .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255,107,53,0.4); }
+        .analyze-btn:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Progress */
+        .progress-section {
+            display: none;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .progress-text {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Results */
+        .results-section {
+            display: none;
+        }
+        .result-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        .result-card h2 {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .result-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 20px 0 12px;
+            color: var(--text);
+        }
+        .result-card p { margin-bottom: 12px; }
+
+        /* Styled Tables */
+        .result-card table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        .result-card th {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+        }
+        .result-card td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .result-card tr:nth-child(even) { background: var(--primary-light); }
+        .result-card tr:hover { background: #d4edaa; }
+
+        /* Highlight boxes */
+        .highlight-box {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 16px;
+        }
+        .highlight-box.warning {
+            background: #fff3e0;
+            border-left-color: var(--accent);
+        }
+        .highlight-box.conclusion {
+            background: #e3f2fd;
+            border-left-color: #1976d2;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* Quote (引用) */
+        .source-quote {
+            background: #f5f5f5;
+            border-left: 4px solid #9e9e9e;
+            padding: 12px 16px;
+            margin: 12px 0;
+            font-size: 13px;
+            color: #555;
+            border-radius: 0 8px 8px 0;
+        }
+        .source-quote .source-ref {
+            display: block;
+            margin-top: 8px;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        /* Big Number */
+        .big-number {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--primary);
+            text-align: center;
+            margin: 16px 0;
+        }
+        .big-number-label {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* History Sidebar */
+        .history-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 360px;
+            height: 100vh;
+            background: var(--card-bg);
+            box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+            z-index: 100;
+            overflow-y: auto;
+        }
+        .history-panel.open { display: block; }
+        .history-header {
+            padding: 20px 24px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-header h3 { font-size: 18px; }
+        .history-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .history-list { padding: 16px; }
+        .history-item {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .history-item-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .history-item-date {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        .history-item-delete {
+            float: right;
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: -4px;
+        }
+        .history-empty {
+            text-align: center;
+            color: var(--text-light);
+            padding: 40px 20px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.3);
+            z-index: 99;
+        }
+        .overlay.open { display: block; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header { padding: 16px; flex-direction: column; gap: 12px; }
+            .header h1 { font-size: 18px; }
+            .container { padding: 16px; }
+            .upload-section { padding: 24px; }
+            .result-card { padding: 20px; }
+            .big-number { font-size: 36px; }
+            .history-panel { width: 100%; }
+            .api-key-section { flex-direction: column; align-items: stretch; }
+        }
+
+        /* Print styles for showing to clients */
+        @media print {
+            .header, .upload-section, .api-key-section, .analyze-section,
+            .progress-section, .header-actions { display: none !important; }
+            .results-section { display: block !important; }
+            .result-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <h1>📊 障害福祉計画レビュワー</h1>
+    <div class="header-actions">
+        <button class="header-btn" onclick="toggleHistory()">📋 履歴</button>
+        <button class="header-btn" onclick="exportReport()">📄 レポート出力</button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container">
+
+    <!-- API Key -->
+    <div class="api-key-section">
+        <label>🔑 Gemini API Key：</label>
+        <input type="password" class="api-key-input" id="apiKeyInput" placeholder="AIzaSy... (ブラウザに保存されます)">
+        <button class="save-key-btn" onclick="saveApiKey()">保存</button>
+    </div>
+
+    <!-- Upload -->
+    <div class="upload-section" id="uploadSection">
+        <div class="upload-icon">📄</div>
+        <div class="upload-title">障害福祉計画PDFをアップロード</div>
+        <div class="upload-desc">都道府県・市区町村の障害福祉計画PDFをドラッグ＆ドロップ、またはボタンで選択</div>
+        <div class="file-input-wrapper">
+            <input type="file" class="file-input" id="pdfInput" accept=".pdf" onchange="handleFileSelect(event)">
+            <button class="upload-btn" onclick="document.getElementById('pdfInput').click()">PDFを選択</button>
+        </div>
+        <div class="file-name" id="fileName"></div>
+    </div>
+
+    <!-- Analyze Button -->
+    <div class="analyze-section">
+        <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()" disabled>🔍 分析を開始する</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-section" id="progressSection">
+        <div><span class="spinner"></span><span id="progressLabel">PDFを読み込み中...</span></div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">準備中...</div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection"></div>
+
+</div>
+
+<!-- History Panel -->
+<div class="overlay" id="overlay" onclick="toggleHistory()"></div>
+<div class="history-panel" id="historyPanel">
+    <div class="history-header">
+        <h3>📋 分析履歴</h3>
+        <button class="history-close" onclick="toggleHistory()">✕</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+</div>
+
+<script type="module">
+// PDF.js setup
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+window.pdfjsLib = pdfjsLib;
+</script>
+
+<script>
+// ========== State ==========
+let selectedFile = null;
+let pdfText = '';
+const STORAGE_KEY = 'fukushi-plan-history';
+const API_KEY_STORAGE = 'fukushi-plan-api-key';
+
+// ========== Init ==========
+window.addEventListener('DOMContentLoaded', () => {
+    // Load saved API key
+    const savedKey = localStorage.getItem(API_KEY_STORAGE);
+    if (savedKey) {
+        document.getElementById('apiKeyInput').value = savedKey;
+    }
+
+    // Drag & drop
+    const uploadSection = document.getElementById('uploadSection');
+    uploadSection.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadSection.classList.add('dragover');
+    });
+    uploadSection.addEventListener('dragleave', () => {
+        uploadSection.classList.remove('dragover');
+    });
+    uploadSection.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadSection.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            if (file.type === 'application/pdf') {
+                selectedFile = file;
+                document.getElementById('fileName').textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+    });
+});
+
+// ========== File Handling ==========
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        selectedFile = file;
+        document.getElementById('fileName').textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+        document.getElementById('analyzeBtn').disabled = false;
+    }
+}
+window.handleFileSelect = handleFileSelect;
+
+// ========== API Key ==========
+function saveApiKey() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (key) {
+        localStorage.setItem(API_KEY_STORAGE, key);
+        alert('APIキーを保存しました ✅');
+    }
+}
+window.saveApiKey = saveApiKey;
+
+// ========== PDF Text Extraction ==========
+async function extractPdfText(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    const totalPages = pdf.numPages;
+
+    for (let i = 1; i <= totalPages; i++) {
+        updateProgress(10 + (i / totalPages) * 30, `PDFを読み込み中... (${i}/${totalPages}ページ)`);
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        fullText += `\n\n--- ページ ${i} ---\n${pageText}`;
+    }
+    return fullText;
+}
+
+// ========== Analysis ==========
+async function startAnalysis() {
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    if (!apiKey) {
+        alert('Gemini APIキーを入力してください');
+        return;
+    }
+    if (!selectedFile) {
+        alert('PDFファイルを選択してください');
+        return;
+    }
+
+    // Show progress
+    document.getElementById('progressSection').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = true;
+    updateProgress(5, 'PDFを読み込み中...');
+
+    try {
+        // Step 1: Extract PDF text
+        pdfText = await extractPdfText(selectedFile);
+        updateProgress(40, 'PDFの読み込み完了。Gemini APIに送信中...');
+
+        // Step 2: Send to Gemini with the analysis prompt
+        const analysisResult = await callGeminiAPI(apiKey, pdfText);
+        updateProgress(90, '分析結果を整形中...');
+
+        // Step 3: Render results
+        renderResults(analysisResult);
+        updateProgress(100, '完了！');
+
+        // Step 4: Save to history
+        saveToHistory(selectedFile.name, analysisResult);
+
+        // Hide progress, show results
+        setTimeout(() => {
+            document.getElementById('progressSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = false;
+        }, 500);
+
+    } catch (error) {
+        console.error('Analysis error:', error);
+        alert(`エラーが発生しました: ${error.message}`);
+        document.getElementById('progressSection').style.display = 'none';
+        document.getElementById('analyzeBtn').disabled = false;
+    }
+}
+window.startAnalysis = startAnalysis;
+
+// ========== Gemini API Call ==========
+async function callGeminiAPI(apiKey, pdfContent) {
+    // Truncate if too long (Gemini has token limits)
+    const maxChars = 900000;
+    const truncated = pdfContent.length > maxChars
+        ? pdfContent.substring(0, maxChars) + '\n\n[※ 文書が長いため一部省略されています]'
+        : pdfContent;
+
+    const systemPrompt = `あなたは就労支援事業所の運営コンサルタントです。
+
+送信された地域の障害福祉計画の情報をもとに、就労系サービス（B型・A型・就労移行）について、利用者を増やすための戦略提案を整理してください。
+
+回答の冒頭に「ありがとうございます」などの挨拶は不要です。分析と提案の内容だけを返してください。
+
+━━━━━━━━━━━━━━━━━━━━
+
+【1. この地域の市場は伸びるか？】
+
+- 手帳所持者の推移（特に精神手帳の増減率）
+- B型・A型・就労移行それぞれの利用見込量（R6→R8の変化）
+- 「伸びる／横ばい／縮む」を判断し、根拠となる数字を明示
+
+【2. 届いていない潜在層はどこにいるか？】
+
+以下の手順で、この地域の「就労支援に繋がっていない潜在層」を推計してください。
+
+■ ステップ1：就労年齢の手帳所持者数を算出
+- 知的障害者手帳（療育手帳）の所持者数
+- 精神障害者保健福祉手帳の所持者数
+- 上記2つの合計を出す
+※ 身体障害者手帳は除外してください。
+身体手帳所持者の約7割は65歳以上であり、
+就労支援の主な対象層と異なるためです。
+この除外理由は結果にも注記してください。
+- 年齢別データがあれば18〜64歳に絞る。
+なければ全年齢の合計を使い、
+【注意】年齢で絞れていない旨を明記。
+
+■ 手帳所持者数が計画書に記載されていない場合
+以下の順で対応してください：
+1. 厚生労働省「衛生行政報告例」等の全国統計から
+当該都道府県・政令市の手帳所持者数を引用し、
+【外部データ】と明記して使用する
+2. それも見つからない場合は、
+「この計画書には手帳所持者の総数が記載されていないため、
+潜在層Aの算出ができません。
+○○市（県）の手帳所持者数データを追加で提供してください」
+とユーザーに伝える
+3. 手帳データなしで推計を試みる場合でも、
+「就労系利用者数 ÷ 相談窓口数」のような
+既に繋がっている人の計算は行わないこと。
+潜在層とは「まだ繋がっていない人」の規模を指す
+
+■ ステップ2：就労系サービスの利用者数を合算
+- B型の利用者数（人/月）
+- A型の利用者数（人/月）
+- 就労移行支援の利用者数（人/月）
+- 上記3つの合計 ＝ 就労系サービス利用者数
+
+■ ステップ3：潜在層Aを算出
+知的＋精神の手帳所持者数
+− 就労系サービス利用者数（B型＋A型＋移行）
+＝ 手帳を持ちながら就労支援を利用していない人数
+
+※ この数値には重度障害で就労が困難な方や、
+一般就労中の方も含まれます。
+全員が即座に利用対象とは限りませんが、
+「制度に繋がっていない層の規模感」として
+提示してください。
+
+■ ステップ4：潜在層Bを示唆（データがあれば）
+- 精神通院医療（自立支援医療）受給者数
+− 精神手帳所持者数
+＝ 通院しているが手帳を取得していない人数
+（＝手帳を取れば就労支援の対象になり得る層）
+- アンケートで「サービスを知らない」
+「利用方法が分からない」の回答割合があれば引用
+
+■ まとめ
+- 潜在層A（手帳あり×未利用）の実数
+- 潜在層B（手帳未取得だが通院中）の推計値
+- 利用率（就労系利用者 ÷ 知的＋精神手帳所持者）を%で算出
+- 「この地域には少なくとも○○人が
+就労支援に繋がっていない」の結論文
+
+【3. この地域で勝つための差別化ポイント】
+
+- B型・A型・就労移行それぞれの既存事業所数と競合密度
+- 既存事業所が対象としている障害種別の偏り
+- 手帳データから見た「増えているのに受け皿が少ない」障害種別
+- A型の場合：ハローワーク・Indeedなど求人媒体との違い（福祉サービスとして探す層、家族・相談員が見る層）
+- 就労移行の場合：法定雇用率引き上げ（R8.7月〜2.7%）で企業の採用ニーズが増える影響
+
+【4. ネットでの情報発信が有効な根拠】
+
+上記1〜3を踏まえて、以下の論理構造で整理してください：
+
+1. 潜在層Aが○○人いる（実数）
+2. 相談支援窓口は○箇所しかない（キャパシティの限界）
+3. 潜在層A ÷ 相談窓口数 ＝ 1窓口あたり○○人の未利用者を
+新たにサービスに繋げる必要がある
+→ 紹介ルートだけでは物理的に回らない
+4. アンケートでインターネットで情報収集している割合（データがあれば）
+5. だからインターネットでの事業所情報発信が有効
+6. 「相談支援の紹介ルートだけでは届かない層がこれだけいる。
+だからネットでの情報発信が必要」という結論文
+
+※ 相談窓口の数は「既存利用者の対応状況」ではなく、
+「まだ繋がっていない潜在層に対するキャパシティの限界」
+の根拠として使ってください。
+
+━━━━━━━━━━━━━━━━━━━━
+
+■ 数値の引用ルール
+
+1. 数値は必ず計画書から直接引用し、引用元のページや項目名を明記してください。
+例：「第7期計画 見込量一覧表より、B型利用人数 R8=13,330人/月」
+
+2. 計画書に記載がない数値を推計する場合は、
+必ず【推計】と明記し、計算式と使用した前提を示してください。
+
+3. 計画書に根拠がない一般論は、【一般論】と明記してください。
+
+4. 見込量を引用する際は、「R6年度」「R7年度」「R8年度」の3年分を並べ、
+増減率はR6→R8で計算してください。
+
+5. 数値を引用する際は、該当する表の見出しも記載してください。
+
+6. 手帳所持者数は、PDFのグラフまたは表から「各年度末」の数値を直接読み取ってください。
+
+7. 見込量テーブルが複数ある場合、第7期計画（R6〜R8）の見込量を優先してください。
+
+8. 見込量の単位に注意してください。「利用人数（人/月）」を使用してください。
+
+9. 「利用見込量」と「一般就労への移行者数目標」は別物です。混同しないでください。
+
+━━━━━━━━━━━━━━━━━━━━
+
+■ 出力フォーマット指示
+
+回答は以下のHTMLフォーマットで出力してください。マークダウンではなくHTMLで返してください。
+
+各セクションを <div class="result-section"> で囲み、以下のクラスを使ってください：
+
+- セクション見出し: <h2>📊 セクションタイトル</h2>
+- サブ見出し: <h3>サブタイトル</h3>
+- 重要な結論: <div class="highlight-box conclusion">結論文</div>
+- 警告・注意: <div class="highlight-box warning">注意事項</div>
+- 補足情報: <div class="highlight-box">補足</div>
+- 引用: <div class="source-quote">引用文<span class="source-ref">── 出典情報</span></div>
+- 大きな数字: <div class="big-number">12,345人</div><div class="big-number-label">潜在層A（手帳あり×未利用）</div>
+- 表: <table><thead><tr><th>列1</th><th>列2</th></tr></thead><tbody>...</tbody></table>
+- グラフ用データ: <div class="chart-placeholder" data-chart-type="bar" data-labels='["R6","R7","R8"]' data-datasets='[{"label":"B型","data":[100,110,120]},{"label":"A型","data":[50,55,60]}]'></div>
+
+グラフ用データは上記のdata属性形式で出力してください。JavaScriptで自動的にChart.jsグラフに変換します。`;
+
+    const requestBody = {
+        contents: [{
+            parts: [{
+                text: `以下は障害福祉計画のPDFから抽出したテキストです。上記の分析フレームワークに従って分析してください。\n\n${truncated}`
+            }]
+        }],
+        systemInstruction: {
+            parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 8192,
+        }
+    };
+
+    const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        }
+    );
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Gemini APIから有効な応答がありませんでした');
+
+    return text;
+}
+
+// ========== Render Results ==========
+function renderResults(htmlContent) {
+    const container = document.getElementById('resultsSection');
+
+    // Clean up: remove markdown code fences if Gemini wraps in ```html
+    let cleaned = htmlContent
+        .replace(/^```html?\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+
+    // Wrap in result-card if not already structured
+    if (!cleaned.includes('result-section') && !cleaned.includes('result-card')) {
+        cleaned = `<div class="result-card">${cleaned}</div>`;
+    }
+
+    // Wrap each result-section in a card
+    cleaned = cleaned.replace(/<div class="result-section">/g, '<div class="result-card">');
+
+    container.innerHTML = cleaned;
+    container.style.display = 'block';
+
+    // Render charts from placeholders
+    renderCharts();
+
+    // Smooth scroll to results
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ========== Chart Rendering ==========
+function renderCharts() {
+    document.querySelectorAll('.chart-placeholder').forEach((placeholder, index) => {
+        try {
+            const chartType = placeholder.dataset.chartType || 'bar';
+            const labels = JSON.parse(placeholder.dataset.labels || '[]');
+            const datasets = JSON.parse(placeholder.dataset.datasets || '[]');
+
+            const canvas = document.createElement('canvas');
+            canvas.id = `chart-${index}`;
+            canvas.style.maxHeight = '300px';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'chart-container';
+            wrapper.appendChild(canvas);
+
+            placeholder.replaceWith(wrapper);
+
+            const colors = ['#70b21f', '#ff6b35', '#1976d2', '#9c27b0', '#00bcd4'];
+            const bgColors = ['rgba(112,178,31,0.2)', 'rgba(255,107,53,0.2)', 'rgba(25,118,210,0.2)', 'rgba(156,39,176,0.2)', 'rgba(0,188,212,0.2)'];
+
+            new Chart(canvas, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets.map((ds, i) => ({
+                        ...ds,
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: chartType === 'line' ? bgColors[i % bgColors.length] : colors[i % colors.length],
+                        borderWidth: 2,
+                        fill: chartType === 'line',
+                        tension: 0.3,
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { font: { family: 'Noto Sans JP', size: 13 } }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Chart render error:', e);
+        }
+    });
+}
+
+// ========== Progress ==========
+function updateProgress(percent, label) {
+    document.getElementById('progressBar').style.width = `${percent}%`;
+    if (label) document.getElementById('progressLabel').textContent = label;
+    document.getElementById('progressText').textContent = `${Math.round(percent)}%`;
+}
+
+// ========== History ==========
+function getHistory() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch { return []; }
+}
+
+function saveToHistory(fileName, analysisHtml) {
+    const history = getHistory();
+    const entry = {
+        id: Date.now().toString(),
+        fileName: fileName,
+        date: new Date().toLocaleString('ja-JP'),
+        region: extractRegionName(analysisHtml),
+        html: analysisHtml,
+    };
+    history.unshift(entry);
+    // Keep max 50 entries
+    if (history.length > 50) history.pop();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
+
+function extractRegionName(html) {
+    // Try to find region name from content
+    const match = html.match(/([\u4e00-\u9faf]{2,6}[都道府県市区町村])/);
+    return match ? match[1] : '不明な地域';
+}
+
+function toggleHistory() {
+    const panel = document.getElementById('historyPanel');
+    const overlay = document.getElementById('overlay');
+    const isOpen = panel.classList.contains('open');
+
+    if (isOpen) {
+        panel.classList.remove('open');
+        overlay.classList.remove('open');
+    } else {
+        renderHistoryList();
+        panel.classList.add('open');
+        overlay.classList.add('open');
+    }
+}
+window.toggleHistory = toggleHistory;
+
+function renderHistoryList() {
+    const history = getHistory();
+    const container = document.getElementById('historyList');
+
+    if (history.length === 0) {
+        container.innerHTML = '<div class="history-empty">📭 まだ分析履歴がありません</div>';
+        return;
+    }
+
+    container.innerHTML = history.map(entry => `
+        <div class="history-item" onclick="loadFromHistory('${entry.id}')">
+            <button class="history-item-delete" onclick="event.stopPropagation(); deleteHistory('${entry.id}')">🗑 削除</button>
+            <div class="history-item-title">📄 ${entry.region || entry.fileName}</div>
+            <div class="history-item-date">${entry.fileName} ─ ${entry.date}</div>
+        </div>
+    `).join('');
+}
+
+function loadFromHistory(id) {
+    const history = getHistory();
+    const entry = history.find(h => h.id === id);
+    if (entry) {
+        renderResults(entry.html);
+        toggleHistory();
+    }
+}
+window.loadFromHistory = loadFromHistory;
+
+function deleteHistory(id) {
+    if (!confirm('この履歴を削除しますか？')) return;
+    const history = getHistory().filter(h => h.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    renderHistoryList();
+}
+window.deleteHistory = deleteHistory;
+
+// ========== Export ==========
+function exportReport() {
+    const results = document.getElementById('resultsSection');
+    if (!results.innerHTML.trim()) {
+        alert('エクスポートする分析結果がありません');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+            <meta charset="UTF-8">
+            <title>障害福祉計画 分析レポート</title>
+            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Noto Sans JP', sans-serif; max-width: 900px; margin: 0 auto; padding: 40px; color: #2d3436; line-height: 1.7; }
+                h1 { text-align: center; color: #5a9118; border-bottom: 3px solid #70b21f; padding-bottom: 12px; margin-bottom: 32px; }
+                h2 { color: #5a9118; border-bottom: 2px solid #70b21f; padding-bottom: 8px; margin-top: 32px; }
+                table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+                th { background: #70b21f; color: white; padding: 10px 14px; text-align: left; }
+                td { padding: 8px 14px; border-bottom: 1px solid #ddd; }
+                tr:nth-child(even) { background: #f5f9ed; }
+                .highlight-box { padding: 14px 18px; border-radius: 6px; margin: 14px 0; }
+                .highlight-box.conclusion { background: #e3f2fd; border-left: 4px solid #1976d2; font-weight: 700; font-size: 16px; }
+                .highlight-box.warning { background: #fff3e0; border-left: 4px solid #ff6b35; }
+                .source-quote { background: #f5f5f5; border-left: 4px solid #9e9e9e; padding: 10px 14px; margin: 10px 0; font-size: 13px; color: #555; }
+                .source-ref { display: block; margin-top: 6px; font-weight: 700; color: #5a9118; }
+                .big-number { font-size: 42px; font-weight: 900; color: #70b21f; text-align: center; margin: 12px 0; }
+                .big-number-label { text-align: center; color: #636e72; font-size: 13px; }
+                .result-card { margin-bottom: 24px; }
+                .chart-container, .chart-placeholder { display: none; }
+                @media print { body { padding: 20px; } }
+            </style>
+        </head>
+        <body>
+            <h1>📊 障害福祉計画 分析レポート</h1>
+            <p style="text-align:center;color:#636e72;">生成日: ${new Date().toLocaleString('ja-JP')}</p>
+            ${results.innerHTML}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+window.exportReport = exportReport;
+</script>
+
+</body>
+</html>
